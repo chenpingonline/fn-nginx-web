@@ -65,7 +65,7 @@ RUN ./configure \
       --http-uwsgi-temp-path=uwsgi_temp \
       --http-scgi-temp-path=scgi_temp \
       --user=nobody \
-      --group=nobody \
+      --group=nogroup \
       --with-cc-opt='-Os -fomit-frame-pointer -pipe' \
       --with-ld-opt='-static -Wl,--as-needed' \
       --with-threads \

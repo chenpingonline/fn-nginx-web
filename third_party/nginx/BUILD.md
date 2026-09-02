@@ -42,7 +42,7 @@ fnOS.
 --http-uwsgi-temp-path=uwsgi_temp
 --http-scgi-temp-path=scgi_temp
 --user=nobody
---group=nobody
+--group=nogroup
 --with-cc-opt=-Os -fomit-frame-pointer -pipe
 --with-ld-opt=-static -Wl,--as-needed
 --with-threads
@@ -59,6 +59,11 @@ fnOS.
 --with-stream_ssl_preread_module
 ```
 
+`nogroup` is used as the compiled fallback group so configuration tests also
+work when the static binary is invoked as root on Debian-based systems. During
+normal fnOS operation the Nginx master process runs as the dedicated package
+user, so no root privilege is required.
+
 The current UI exposes HTTP/HTTPS reverse proxy features. Stream modules are
 compiled into the core for a later TCP/UDP management release, but no Stream
 rule editor is enabled in version 0.1.0.
@@ -67,10 +72,10 @@ rule editor is enabled in version 0.1.0.
 
 ```text
 nginx-1.30.4-x86_64-linux-static
-SHA-256: 8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486
+SHA-256: c5224e835cf2fbbf1699803b95f4c1d61ee0b53c12f2490935bff8b298f401ce
 
 nginx-1.30.4-aarch64-linux-static
-SHA-256: 2eb14d5f26aad8066b0a3ce206915a7b591a735ef12fe9d23baf62fac0d6720c
+SHA-256: 78736e949b5efbda202c320de48016a0736a869d7364eb45044a030392fd0475
 ```
 
-GitHub release tag: `nginx-core-1.30.4-r1`.
+GitHub release tag: `nginx-core-1.30.4-r2`.

@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARCH="${1:?用法: fetch-nginx.sh <x86|arm64> [目标路径]}"
 DEST="${2:-}"
 VERSION="1.30.4"
-RELEASE_TAG="nginx-core-1.30.4-r1"
+RELEASE_TAG="nginx-core-1.30.4-r2"
 RELEASE_BASE="https://github.com/chenpingonline/fn-nginx-web/releases/download/${RELEASE_TAG}"
 
 sha256_file() {
@@ -42,12 +42,12 @@ case "$ARCH" in
   x86|x86_64|amd64)
     ARCH="x86"
     FILENAME="nginx-${VERSION}-x86_64-linux-static"
-    BIN_SHA="8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486"
+    BIN_SHA="c5224e835cf2fbbf1699803b95f4c1d61ee0b53c12f2490935bff8b298f401ce"
     ;;
   arm|arm64|aarch64)
     ARCH="arm64"
     FILENAME="nginx-${VERSION}-aarch64-linux-static"
-    BIN_SHA="2eb14d5f26aad8066b0a3ce206915a7b591a735ef12fe9d23baf62fac0d6720c"
+    BIN_SHA="78736e949b5efbda202c320de48016a0736a869d7364eb45044a030392fd0475"
     ;;
   *)
     echo "不支持的架构：$ARCH（应为 x86 或 arm64）" >&2

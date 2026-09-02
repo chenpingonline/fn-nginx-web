@@ -4,9 +4,9 @@ Target architecture: Linux x86_64
 Nginx version: 1.30.4
 Source archive: https://nginx.org/download/nginx-1.30.4.tar.gz
 Source SHA-256: 4261dc90e9e47c1c4041276e9aaa3d48ebe2e664f728e14fa95ae6c67d57a08b
-Build release: nginx-core-1.30.4-r1
+Build release: nginx-core-1.30.4-r2
 Release asset: nginx-1.30.4-x86_64-linux-static
-Binary SHA-256: 8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486
+Binary SHA-256: c5224e835cf2fbbf1699803b95f4c1d61ee0b53c12f2490935bff8b298f401ce
 
 Build environment:
 - Alpine Linux 3.21
@@ -15,6 +15,10 @@ Build environment:
 - OpenSSL 3.3.7-r0
 - PCRE 8.45-r3
 - zlib 1.3.2-r0
+
+Compiled defaults:
+- user: nobody
+- group: nogroup
 
 The executable is a stripped, statically linked ELF binary. It was compiled
 from the official nginx.org source with the same configure arguments used for

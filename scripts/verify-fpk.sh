@@ -28,11 +28,11 @@ PLATFORM="$(awk -F= '$1 ~ /^[[:space:]]*platform[[:space:]]*$/ {gsub(/[[:space:]
 case "$PLATFORM" in
   x86)
     FILE_PATTERN='x86-64|x86_64'
-    NGINX_SHA='8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486'
+    NGINX_SHA='c5224e835cf2fbbf1699803b95f4c1d61ee0b53c12f2490935bff8b298f401ce'
     ;;
   arm)
     FILE_PATTERN='ARM aarch64|ARM64|aarch64'
-    NGINX_SHA='2eb14d5f26aad8066b0a3ce206915a7b591a735ef12fe9d23baf62fac0d6720c'
+    NGINX_SHA='78736e949b5efbda202c320de48016a0736a869d7364eb45044a030392fd0475'
     ;;
   *)
     echo "manifest platform 无效：$PLATFORM" >&2
@@ -68,6 +68,10 @@ grep -aFq 'Fn-Nginx 0.1.0' "$WORK/app/bin/fnproxy-server" || {
 }
 grep -aFq 'nginx version: nginx/1.30.4' "$WORK/app/bin/nginx" || {
   echo 'Nginx 版本不正确' >&2
+  exit 1
+}
+grep -aFq -- '--group=nogroup' "$WORK/app/bin/nginx" || {
+  echo 'Nginx 默认组配置不正确' >&2
   exit 1
 }
 

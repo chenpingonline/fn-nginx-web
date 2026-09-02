@@ -46,18 +46,20 @@ Fn-Nginx 只使用自己的 `TRIM_APPDEST`、`TRIM_PKGETC`、`TRIM_PKGVAR` 和 `
 
 ## Nginx 核心
 
-x86_64 与 ARM64 核心现在都从同一份 Nginx 1.30.4 官方源码编译，并使用相同的模块和静态链接参数。两个包不依赖 fnOS 自带的 glibc、OpenSSL、PCRE 或 zlib 版本。
+x86_64 与 ARM64 核心都从同一份 Nginx 1.30.4 官方源码编译，并使用相同的模块和静态链接参数。两个包不依赖 fnOS 自带的 glibc、OpenSSL、PCRE 或 zlib 版本。
 
 ```text
 官方源码 SHA-256：4261dc90e9e47c1c4041276e9aaa3d48ebe2e664f728e14fa95ae6c67d57a08b
 
-x86_64 核心 SHA-256：8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486
-ARM64  核心 SHA-256：2eb14d5f26aad8066b0a3ce206915a7b591a735ef12fe9d23baf62fac0d6720c
+x86_64 核心 SHA-256：c5224e835cf2fbbf1699803b95f4c1d61ee0b53c12f2490935bff8b298f401ce
+ARM64  核心 SHA-256：78736e949b5efbda202c320de48016a0736a869d7364eb45044a030392fd0475
 ```
 
 核心包含 HTTPS、HTTP/2、Real IP、状态页、Auth Request，以及 Stream、Stream TLS 和 TLS SNI 预读取模块。当前 0.1.0 管理页面只开放 HTTP/HTTPS 反向代理，TCP/UDP 规则编辑器留待后续版本。
 
-完整构建参数和来源记录见 `third_party/nginx/BUILD.md`。已编译核心发布在 `nginx-core-1.30.4-r1` Release 中。
+编译默认账户为 `nobody:nogroup`，因此在 Debian 系统中以 root 执行 `nginx -t` 也能正确完成用户组解析；fnOS 正常运行时仍由独立的 `fnproxy` package 用户直接启动，不需要 root。
+
+完整构建参数和来源记录见 `third_party/nginx/BUILD.md`。已编译核心发布在 `nginx-core-1.30.4-r2` Release 中。
 
 ## 构建 FPK
 
