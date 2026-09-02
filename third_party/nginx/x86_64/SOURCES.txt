@@ -1,12 +1,12 @@
 Fn-Nginx Nginx core build provenance
 
-Target architecture: Linux AArch64 / ARM64
+Target architecture: Linux x86_64
 Nginx version: 1.30.4
 Source archive: https://nginx.org/download/nginx-1.30.4.tar.gz
 Source SHA-256: 4261dc90e9e47c1c4041276e9aaa3d48ebe2e664f728e14fa95ae6c67d57a08b
 Build release: nginx-core-1.30.4-r1
-Release asset: nginx-1.30.4-aarch64-linux-static
-Binary SHA-256: 2eb14d5f26aad8066b0a3ce206915a7b591a735ef12fe9d23baf62fac0d6720c
+Release asset: nginx-1.30.4-x86_64-linux-static
+Binary SHA-256: 8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486
 
 Build environment:
 - Alpine Linux 3.21
@@ -18,4 +18,4 @@ Build environment:
 
 The executable is a stripped, statically linked ELF binary. It was compiled
 from the official nginx.org source with the same configure arguments used for
-the x86_64 build. No third-party Nginx module is included.
+the AArch64 build. No third-party Nginx module is included.

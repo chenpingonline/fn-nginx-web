@@ -1,9 +1,9 @@
 # Third-party software notices
 
-Fn-Nginx packages an independently running NGINX Open Source 1.30.4 executable.
-The x86_64 build is dynamically linked against libraries supplied by the target
-system. The ARM64 build is a static executable and therefore contains the
-additional components listed below.
+Fn-Nginx packages independently running NGINX Open Source 1.30.4 executables
+for Linux x86_64 and AArch64. Both executables are built from the same official
+source archive, use the same module set, and are statically linked. No
+third-party Nginx module is included.
 
 ## NGINX Open Source 1.30.4
 
@@ -30,21 +30,18 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## Components statically linked into the ARM64 NGINX build
+## Components statically linked into both NGINX builds
 
-- njs 0.9.9 — BSD 2-Clause style license.
-- nginx-auth-jwt 0.14.2 — MIT License.
-- nginx-keyval 0.5.0 — MIT License.
-- ngx_devel_kit 0.3.4 — BSD 3-Clause license.
-- echo-nginx-module 0.65 — BSD 2-Clause style license.
-- headers-more-nginx-module 0.40 — BSD license.
-- set-misc-nginx-module 0.34 — BSD-style license.
 - musl libc 1.2.5-r11 — MIT-style license.
 - OpenSSL 3.3.7-r0 — Apache License 2.0.
-- jansson 2.14-r4 — MIT License.
 - PCRE 8.45-r3 — BSD-style license.
 - zlib 1.3.2-r0 — zlib License.
 - GCC runtime support libraries 14.2.0-r4 — GCC Runtime Library Exception.
 
-Exact source locations, versions and hashes are retained in
-`third_party/nginx/arm64/SOURCES.txt` and copied into ARM64 FPK artifacts.
+The build environment also uses Alpine Linux build tooling and CA certificates;
+these are build-time dependencies and are not shipped as separate runtime
+packages in the FPK.
+
+Exact source checksum, configure arguments, per-architecture binary checksums
+and build provenance are retained in `third_party/nginx/BUILD.md`,
+`third_party/nginx/x86_64/` and `third_party/nginx/arm64/`.

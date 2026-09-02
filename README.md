@@ -44,9 +44,24 @@ Fn-Nginx 只使用自己的 `TRIM_APPDEST`、`TRIM_PKGETC`、`TRIM_PKGVAR` 和 `
 
 > 为兼容已经安装的测试版，内部应用 ID、统一网关路径和运行用户仍保留为 `fnproxy`；这不会影响桌面展示名称和 FPK 文件名。
 
-## 构建
+## Nginx 核心
 
-要求：Go 1.22+、GNU tar、curl、Python 3、`file` 和 `binutils`。
+x86_64 与 ARM64 核心现在都从同一份 Nginx 1.30.4 官方源码编译，并使用相同的模块和静态链接参数。两个包不依赖 fnOS 自带的 glibc、OpenSSL、PCRE 或 zlib 版本。
+
+```text
+官方源码 SHA-256：4261dc90e9e47c1c4041276e9aaa3d48ebe2e664f728e14fa95ae6c67d57a08b
+
+x86_64 核心 SHA-256：8801e2de7cd4aee8153ca6bd68d5c13a0dcf62827e5e8de6bf1fc1e7c1482486
+ARM64  核心 SHA-256：2eb14d5f26aad8066b0a3ce206915a7b591a735ef12fe9d23baf62fac0d6720c
+```
+
+核心包含 HTTPS、HTTP/2、Real IP、状态页、Auth Request，以及 Stream、Stream TLS 和 TLS SNI 预读取模块。当前 0.1.0 管理页面只开放 HTTP/HTTPS 反向代理，TCP/UDP 规则编辑器留待后续版本。
+
+完整构建参数和来源记录见 `third_party/nginx/BUILD.md`。已编译核心发布在 `nginx-core-1.30.4-r1` Release 中。
+
+## 构建 FPK
+
+要求：Go 1.22+、GNU tar、curl、Python 3 和 `file`。
 
 ```bash
 make test
@@ -63,7 +78,18 @@ dist/Fn-Nginx-0.1.0-x86.fpk
 dist/Fn-Nginx-0.1.0-arm64.fpk
 ```
 
-构建时会下载固定版本的 Nginx 二进制并校验摘要，第三方二进制不直接提交到源码仓库。固定摘要与来源说明位于 `third_party/nginx/`。也可以通过 `NGINX_BINARY=/path/to/nginx` 提供本地二进制，但仍必须通过固定摘要校验。
+构建脚本会下载固定的自编译静态 Nginx 核心并校验 SHA-256。二进制不直接提交到源码分支，避免仓库快速膨胀。也可以通过 `NGINX_BINARY=/path/to/nginx` 提供本地文件，但仍必须通过固定摘要校验。
+
+## 重新编译 Nginx 核心
+
+GitHub Actions 工作流 `.github/workflows/compile-nginx-static.yml` 会从官方源码同时生成 Linux x86_64 和 AArch64 静态二进制，并发布到固定 Release。
+
+本地有 Docker Buildx 与 QEMU 时，也可以运行：
+
+```bash
+./scripts/build-nginx.sh x86
+./scripts/build-nginx.sh arm64
+```
 
 ## 测试
 
@@ -84,4 +110,4 @@ make release
 
 ## 许可证
 
-Fn-Nginx 源码使用 MIT License。Nginx Open Source 和 ARM64 静态构建所含组件的许可证见 `NGINX_LICENSE`、`NOTICE` 与 `THIRD_PARTY_LICENSES.md`。
+Fn-Nginx 源码使用 MIT License。Nginx Open Source 以及静态链接组件的许可证和来源说明见 `NGINX_LICENSE`、`NOTICE` 与 `THIRD_PARTY_LICENSES.md`。
