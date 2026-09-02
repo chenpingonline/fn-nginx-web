@@ -88,10 +88,11 @@ jobs:
               && cp /build/nginx-source.sha256 /out/ \
               && "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" -V \
                     > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.build-info.txt" 2>&1 \
-              && sha256sum "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" \
-                    > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.sha256" \
               && file "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" \
-                    > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.file.txt"
+                    > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.file.txt" \
+              && cd /out \
+              && sha256sum "nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" \
+                    > "nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.sha256"
           FROM scratch
           COPY --from=build /out/ /
           DOCKERFILE
@@ -120,7 +121,7 @@ jobs:
           grep -q -- '--with-http_v2_module' "${binary}.build-info.txt"
           grep -q -- '--with-stream' "${binary}.build-info.txt"
           grep -q -- '--with-stream_ssl_preread_module' "${binary}.build-info.txt"
-          sha256sum -c "${binary}.sha256"
+          (cd output && sha256sum -c "$(basename "${binary}.sha256")")
           cat "${binary}.build-info.txt"
           cat "${binary}.sha256"
 
