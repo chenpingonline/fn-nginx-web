@@ -1,4 +1,4 @@
-name: Build FnProxy FPK
+name: Build Fn-Nginx FPK
 
 on:
   push:
@@ -30,13 +30,13 @@ jobs:
       - name: Integration test
         run: ./tests/integration.sh
       - name: Lifecycle test
-        run: ./tests/fpk-lifecycle.sh dist/fnproxy-0.1.0-x86.fpk
+        run: ./tests/fpk-lifecycle.sh dist/Fn-Nginx-0.1.0-x86.fpk
       - uses: actions/upload-artifact@v4
         with:
-          name: fnproxy-x86
+          name: Fn-Nginx-x86
           path: |
-            dist/fnproxy-0.1.0-x86.fpk
-            dist/fnproxy-0.1.0-x86.fpk.sha256
+            dist/Fn-Nginx-0.1.0-x86.fpk
+            dist/Fn-Nginx-0.1.0-x86.fpk.sha256
 
   arm64:
     runs-on: ubuntu-latest
@@ -54,7 +54,7 @@ jobs:
         run: ./scripts/build.sh arm64
       - uses: actions/upload-artifact@v4
         with:
-          name: fnproxy-arm64
+          name: Fn-Nginx-arm64
           path: |
-            dist/fnproxy-0.1.0-arm64.fpk
-            dist/fnproxy-0.1.0-arm64.fpk.sha256
+            dist/Fn-Nginx-0.1.0-arm64.fpk
+            dist/Fn-Nginx-0.1.0-arm64.fpk.sha256
