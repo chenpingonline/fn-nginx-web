@@ -58,8 +58,8 @@ jobs:
               text = path.read_text()
               path.write_text(text.replace('FnProxy', 'Fn-Nginx'))
 
-          # The request header and internal application ID remain unchanged so
-          # upgrades from the existing test build continue to work.
+          # Keep the request header and internal application ID unchanged so
+          # upgrades from the existing test build retain data and routes.
           app_js = Path('web/app.js')
           app_js.write_text(app_js.read_text().replace('X-Fn-Nginx-Request', 'X-FnProxy-Request'))
 
@@ -106,8 +106,6 @@ jobs:
           )
           manifest.write_text(text)
 
-          # Assertions protect the internal compatibility boundary and ensure
-          # every produced package uses the requested public name.
           assert 'appname                    = fnproxy' in manifest.read_text()
           assert 'display_name               = Fn-Nginx' in manifest.read_text()
           assert 'gatewayPrefix": "/app/fnproxy"' in Path('fnos/app/ui/config').read_text()
@@ -155,11 +153,15 @@ jobs:
             dist/Fn-Nginx-0.1.0-arm64.fpk
             dist/Fn-Nginx-0.1.0-arm64.fpk.sha256
 
-      - name: Commit final rename and remove this one-time workflow
+      - name: Commit source rename
         run: |
-          rm -f .github/workflows/rename-fn-nginx.yml
+          # GitHub's workflow token cannot update workflow files. Restore them
+          # here; the connector updates build.yml and removes this temporary
+          # workflow in separate API commits after the source push succeeds.
+          git checkout HEAD -- .github/workflows/build.yml .github/workflows/rename-fn-nginx.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'refactor: rename application and FPK artifacts to Fn-Nginx'
+          git diff --cached --quiet && { echo 'No source changes to commit'; exit 1; }
+          git commit -m 'refactor: rename application and FPK artifacts to Fn-Nginx [skip ci]'
           git push origin HEAD:main
