@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.sh text eol=lf
+fnos/cmd/* text eol=lf
+*.png binary
+*.fpk binary
+*.zip binary

@@ -1,0 +1,60 @@
+name: Build FnProxy FPK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  x86:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          cache: false
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y file binutils curl python3 openssl
+      - name: Prepare scripts
+        run: chmod +x scripts/*.sh tests/*.sh fnos/cmd/*
+      - name: Unit tests
+        run: go test ./...
+      - name: Build x86 FPK
+        run: ./scripts/build.sh x86
+      - name: Integration test
+        run: ./tests/integration.sh
+      - name: Lifecycle test
+        run: ./tests/fpk-lifecycle.sh dist/fnproxy-0.1.0-x86.fpk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fnproxy-x86
+          path: |
+            dist/fnproxy-0.1.0-x86.fpk
+            dist/fnproxy-0.1.0-x86.fpk.sha256
+
+  arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          cache: false
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y file binutils curl python3
+      - name: Prepare scripts
+        run: chmod +x scripts/*.sh tests/*.sh fnos/cmd/*
+      - name: Build ARM64 FPK
+        run: ./scripts/build.sh arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fnproxy-arm64
+          path: |
+            dist/fnproxy-0.1.0-arm64.fpk
+            dist/fnproxy-0.1.0-arm64.fpk.sha256

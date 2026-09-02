@@ -1,0 +1,16 @@
+appname                    = fnproxy
+version                    = 0.1.0
+display_name               = FnProxy
+desc                       = fnOS 原生 Nginx 反向代理可视化管理工具。独立运行，不修改飞牛系统 Nginx。
+maintainer                 = chenping
+maintainer_url             = https://github.com/chenpingonline/nginx-fpk
+distributor                = chenping
+source                     = thirdparty
+platform                   = x86
+ctl_stop                   = true
+checkport                  = false
+disable_authorization_path = true
+os_min_version             = 1.1.3100
+desktop_uidir              = ui
+desktop_applaunchname      = fnproxy.main
+changelog                  = 首个测试版本：HTTP/HTTPS 反向代理、WebSocket、证书导入、配置校验、平滑重载、失败回滚、日志与配置历史。

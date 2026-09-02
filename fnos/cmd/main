@@ -1,0 +1,124 @@
+#!/bin/bash
+set -u
+
+BIN="${TRIM_APPDEST}/bin/fnproxy-server"
+SOCKET="${TRIM_APPDEST}/app.sock"
+RUN_DIR="${TRIM_PKGVAR}/run"
+LOG_DIR="${TRIM_PKGVAR}/logs"
+PID_FILE="${RUN_DIR}/fnproxy-server.pid"
+BACKEND_LOG="${LOG_DIR}/fnproxy-server.log"
+
+mkdir -p "$RUN_DIR" "$LOG_DIR"
+
+set_error() {
+  if [ -n "${TRIM_TEMP_LOGFILE:-}" ]; then
+    echo "$1" > "$TRIM_TEMP_LOGFILE"
+  fi
+  echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> "$BACKEND_LOG"
+}
+
+pid_running() {
+  [ -s "$PID_FILE" ] || return 1
+  local pid actual expected
+  pid="$(head -n 1 "$PID_FILE" 2>/dev/null | tr -d '[:space:]')"
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  actual="$(readlink -f "/proc/${pid}/exe" 2>/dev/null || true)"
+  expected="$(readlink -f "$BIN" 2>/dev/null || true)"
+  [ -n "$actual" ] && [ "$actual" = "$expected" ]
+}
+
+backend_ready() {
+  pid_running && [ -S "$SOCKET" ]
+}
+
+start_backend() {
+  if backend_ready; then
+    return 0
+  fi
+  rm -f "$PID_FILE" "$SOCKET"
+  if [ ! -x "$BIN" ]; then
+    set_error "FnProxy 管理程序不存在或无法执行：$BIN"
+    return 1
+  fi
+  FNPROXY_SOCKET="$SOCKET" nohup "$BIN" serve >> "$BACKEND_LOG" 2>&1 &
+  local pid=$!
+  echo "$pid" > "$PID_FILE"
+
+  local count=0
+  while [ "$count" -lt 10 ]; do
+    if [ -S "$SOCKET" ] && kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then
+      break
+    fi
+    sleep 1
+    count=$((count + 1))
+  done
+  kill -TERM "$pid" 2>/dev/null || true
+  rm -f "$PID_FILE" "$SOCKET"
+  set_error "FnProxy 管理服务启动失败，请查看 $BACKEND_LOG"
+  return 1
+}
+
+start_nginx() {
+  if ! "$BIN" nginx-start >> "$BACKEND_LOG" 2>&1; then
+    # 保留管理页面，用户仍可进入并修复端口或配置问题。
+    set_error "独立 Nginx 启动失败；FnProxy 管理页面仍可使用"
+  fi
+  return 0
+}
+
+stop_nginx() {
+  "$BIN" nginx-stop >> "$BACKEND_LOG" 2>&1 || true
+}
+
+stop_backend() {
+  if ! pid_running; then
+    rm -f "$PID_FILE" "$SOCKET"
+    return 0
+  fi
+  local pid count
+  pid="$(head -n 1 "$PID_FILE" | tr -d '[:space:]')"
+  kill -TERM "$pid" 2>/dev/null || true
+  count=0
+  while kill -0 "$pid" 2>/dev/null && [ "$count" -lt 10 ]; do
+    sleep 1
+    count=$((count + 1))
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PID_FILE" "$SOCKET"
+}
+
+case "${1:-}" in
+  start)
+    start_backend || exit 1
+    start_nginx
+    exit 0
+    ;;
+  stop)
+    stop_nginx
+    stop_backend
+    exit 0
+    ;;
+  status)
+    if backend_ready; then
+      exit 0
+    fi
+    exit 3
+    ;;
+  restart)
+    stop_nginx
+    stop_backend
+    start_backend || exit 1
+    start_nginx
+    exit 0
+    ;;
+  *)
+    set_error "未知操作：${1:-empty}（应为 start|stop|status|restart）"
+    exit 1
+    ;;
+esac

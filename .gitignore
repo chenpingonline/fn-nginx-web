@@ -1,0 +1,24 @@
+# Build output
+.build/
+.build-*/
+.cache/
+dist/
+*.fpk
+*.fpk.sha256
+
+# Local runtime/test data
+.fnproxy-dev/
+coverage.out
+
+# Generated application binaries
+fnos/app/bin/*
+!fnos/app/bin/.gitkeep
+
+# Downloaded Nginx binaries
+third_party/nginx/x86_64/nginx
+third_party/nginx/arm64/nginx
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

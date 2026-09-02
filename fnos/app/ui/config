@@ -1,0 +1,14 @@
+{
+  ".url": {
+    "fnproxy.main": {
+      "title": "FnProxy",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "",
+      "gatewayPrefix": "/app/fnproxy",
+      "gatewaySocket": "app.sock",
+      "url": "/app/fnproxy/",
+      "allUsers": false
+    }
+  }
+}
