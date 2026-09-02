@@ -11,104 +11,123 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ matrix.arch }}
+    name: Build ${{ matrix.output_arch }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, aarch64]
+        include:
+          - platform: linux/amd64
+            output_arch: x86_64
+          - platform: linux/arm64
+            output_arch: aarch64
     env:
       NGINX_VERSION: 1.30.4
-      CFLAGS: -Os -fomit-frame-pointer -pipe
-      LDFLAGS: -static -Wl,--as-needed
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Start Alpine ${{ matrix.arch }} build environment
-        uses: jirutka/setup-alpine@v1
-        with:
-          arch: ${{ matrix.arch }}
-          branch: v3.21
-          packages: >
-            build-base
-            linux-headers
-            curl
-            file
-            binutils
-            openssl-dev
-            openssl-libs-static
-            pcre-dev
-            zlib-dev
-            zlib-static
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Download and compile official Nginx source
-        shell: alpine.sh {0}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create reproducible static-build Dockerfile
+        run: |
+          cat > /tmp/Dockerfile.nginx-static <<'DOCKERFILE'
+          # syntax=docker/dockerfile:1
+          FROM alpine:3.21 AS build
+          ARG NGINX_VERSION
+          ARG OUTPUT_ARCH
+          ENV SOURCE_DATE_EPOCH=1786814640
+          RUN apk add --no-cache \
+                build-base linux-headers curl ca-certificates file binutils \
+                openssl-dev openssl-libs-static pcre-dev zlib-dev zlib-static
+          WORKDIR /build
+          RUN curl -fL --retry 5 --retry-delay 2 \
+                -o nginx.tar.gz "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
+              && sha256sum nginx.tar.gz > nginx-source.sha256 \
+              && tar -xzf nginx.tar.gz
+          WORKDIR /build/nginx-${NGINX_VERSION}
+          RUN ./configure \
+                --prefix=. \
+                --sbin-path=nginx \
+                --conf-path=nginx.conf \
+                --pid-path=nginx.pid \
+                --lock-path=nginx.lock \
+                --error-log-path=stderr \
+                --http-log-path=access.log \
+                --http-client-body-temp-path=client_body_temp \
+                --http-proxy-temp-path=proxy_temp \
+                --http-fastcgi-temp-path=fastcgi_temp \
+                --http-uwsgi-temp-path=uwsgi_temp \
+                --http-scgi-temp-path=scgi_temp \
+                --user=nobody \
+                --group=nobody \
+                --with-cc-opt='-Os -fomit-frame-pointer -pipe' \
+                --with-ld-opt='-static -Wl,--as-needed' \
+                --with-threads \
+                --with-file-aio \
+                --with-http_ssl_module \
+                --with-http_v2_module \
+                --with-http_realip_module \
+                --with-http_stub_status_module \
+                --with-http_auth_request_module \
+                --with-http_secure_link_module \
+                --with-stream \
+                --with-stream_ssl_module \
+                --with-stream_realip_module \
+                --with-stream_ssl_preread_module \
+              && make -j2 \
+              && strip objs/nginx \
+              && file objs/nginx \
+              && ldd objs/nginx 2>&1 || true
+          RUN mkdir -p /out \
+              && install -m 0755 objs/nginx "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" \
+              && cp /build/nginx-source.sha256 /out/ \
+              && "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" -V \
+                    > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.build-info.txt" 2>&1 \
+              && sha256sum "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" \
+                    > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.sha256" \
+              && file "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static" \
+                    > "/out/nginx-${NGINX_VERSION}-${OUTPUT_ARCH}-linux-static.file.txt"
+          FROM scratch
+          COPY --from=build /out/ /
+          DOCKERFILE
+
+      - name: Compile official Nginx source
+        run: |
+          rm -rf output
+          docker buildx build \
+            --platform "${{ matrix.platform }}" \
+            --build-arg "NGINX_VERSION=${NGINX_VERSION}" \
+            --build-arg "OUTPUT_ARCH=${{ matrix.output_arch }}" \
+            --provenance=false \
+            --no-cache \
+            --output type=local,dest=output \
+            -f /tmp/Dockerfile.nginx-static .
+
+      - name: Verify compiled binary
         run: |
           set -eux
-          mkdir -p build output
-          cd build
-          curl -fL --retry 3 -o nginx.tar.gz "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"
-          sha256sum nginx.tar.gz | tee "../output/nginx-${NGINX_VERSION}-source.sha256"
-          tar -xzf nginx.tar.gz
-          cd "nginx-${NGINX_VERSION}"
-
-          ./configure \
-            --prefix=. \
-            --sbin-path=nginx \
-            --conf-path=nginx.conf \
-            --pid-path=nginx.pid \
-            --lock-path=nginx.lock \
-            --error-log-path=stderr \
-            --http-log-path=access.log \
-            --http-client-body-temp-path=client_body_temp \
-            --http-proxy-temp-path=proxy_temp \
-            --http-fastcgi-temp-path=fastcgi_temp \
-            --http-uwsgi-temp-path=uwsgi_temp \
-            --http-scgi-temp-path=scgi_temp \
-            --user=nobody \
-            --group=nobody \
-            --with-cc-opt="${CFLAGS}" \
-            --with-ld-opt="${LDFLAGS}" \
-            --with-threads \
-            --with-file-aio \
-            --with-http_ssl_module \
-            --with-http_v2_module \
-            --with-http_realip_module \
-            --with-http_stub_status_module \
-            --with-http_auth_request_module \
-            --with-http_secure_link_module \
-            --with-stream \
-            --with-stream_ssl_module \
-            --with-stream_realip_module \
-            --with-stream_ssl_preread_module
-
-          make -j2
-          strip objs/nginx
-
-          case "${{ matrix.arch }}" in
-            x86_64) output_arch=x86_64 ;;
-            aarch64) output_arch=aarch64 ;;
-          esac
-          output="../../output/nginx-${NGINX_VERSION}-${output_arch}-linux-static"
-          install -m 0755 objs/nginx "$output"
-
-          file "$output" | tee "${output}.file.txt"
-          ldd "$output" 2>&1 | tee "${output}.ldd.txt" || true
-          "$output" -V 2>&1 | tee "${output}.build-info.txt"
-          sha256sum "$output" | tee "${output}.sha256"
-
-          grep -q 'statically linked' "${output}.file.txt"
-          grep -q "nginx/${NGINX_VERSION}" "${output}.build-info.txt"
-          grep -q -- '--with-http_ssl_module' "${output}.build-info.txt"
-          grep -q -- '--with-http_v2_module' "${output}.build-info.txt"
-          grep -q -- '--with-stream' "${output}.build-info.txt"
-          grep -q -- '--with-stream_ssl_preread_module' "${output}.build-info.txt"
+          binary="output/nginx-${NGINX_VERSION}-${{ matrix.output_arch }}-linux-static"
+          test -x "$binary"
+          file "$binary"
+          grep -q 'statically linked' "${binary}.file.txt"
+          grep -q "nginx/${NGINX_VERSION}" "${binary}.build-info.txt"
+          grep -q -- '--with-http_ssl_module' "${binary}.build-info.txt"
+          grep -q -- '--with-http_v2_module' "${binary}.build-info.txt"
+          grep -q -- '--with-stream' "${binary}.build-info.txt"
+          grep -q -- '--with-stream_ssl_preread_module' "${binary}.build-info.txt"
+          sha256sum -c "${binary}.sha256"
+          cat "${binary}.build-info.txt"
+          cat "${binary}.sha256"
 
       - name: Upload compiled binary
         uses: actions/upload-artifact@v4
         with:
-          name: nginx-1.30.4-${{ matrix.arch }}-linux-static
+          name: nginx-1.30.4-${{ matrix.output_arch }}-linux-static
           path: output/*
           if-no-files-found: error
 
