@@ -1,0 +1,144 @@
+name: Compile Nginx 1.30.4 static binaries
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/compile-nginx-static.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+    env:
+      NGINX_VERSION: 1.30.4
+      CFLAGS: -Os -fomit-frame-pointer -pipe
+      LDFLAGS: -static -Wl,--as-needed
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start Alpine ${{ matrix.arch }} build environment
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.arch }}
+          branch: v3.21
+          packages: >
+            build-base
+            linux-headers
+            curl
+            file
+            binutils
+            openssl-dev
+            openssl-libs-static
+            pcre-dev
+            zlib-dev
+            zlib-static
+
+      - name: Download and compile official Nginx source
+        shell: alpine.sh {0}
+        run: |
+          set -eux
+          mkdir -p build output
+          cd build
+          curl -fL --retry 3 -o nginx.tar.gz "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"
+          sha256sum nginx.tar.gz | tee "../output/nginx-${NGINX_VERSION}-source.sha256"
+          tar -xzf nginx.tar.gz
+          cd "nginx-${NGINX_VERSION}"
+
+          ./configure \
+            --prefix=. \
+            --sbin-path=nginx \
+            --conf-path=nginx.conf \
+            --pid-path=nginx.pid \
+            --lock-path=nginx.lock \
+            --error-log-path=stderr \
+            --http-log-path=access.log \
+            --http-client-body-temp-path=client_body_temp \
+            --http-proxy-temp-path=proxy_temp \
+            --http-fastcgi-temp-path=fastcgi_temp \
+            --http-uwsgi-temp-path=uwsgi_temp \
+            --http-scgi-temp-path=scgi_temp \
+            --user=nobody \
+            --group=nobody \
+            --with-cc-opt="${CFLAGS}" \
+            --with-ld-opt="${LDFLAGS}" \
+            --with-threads \
+            --with-file-aio \
+            --with-http_ssl_module \
+            --with-http_v2_module \
+            --with-http_realip_module \
+            --with-http_stub_status_module \
+            --with-http_auth_request_module \
+            --with-http_secure_link_module \
+            --with-stream \
+            --with-stream_ssl_module \
+            --with-stream_realip_module \
+            --with-stream_ssl_preread_module
+
+          make -j2
+          strip objs/nginx
+
+          case "${{ matrix.arch }}" in
+            x86_64) output_arch=x86_64 ;;
+            aarch64) output_arch=aarch64 ;;
+          esac
+          output="../../output/nginx-${NGINX_VERSION}-${output_arch}-linux-static"
+          install -m 0755 objs/nginx "$output"
+
+          file "$output" | tee "${output}.file.txt"
+          ldd "$output" 2>&1 | tee "${output}.ldd.txt" || true
+          "$output" -V 2>&1 | tee "${output}.build-info.txt"
+          sha256sum "$output" | tee "${output}.sha256"
+
+          grep -q 'statically linked' "${output}.file.txt"
+          grep -q "nginx/${NGINX_VERSION}" "${output}.build-info.txt"
+          grep -q -- '--with-http_ssl_module' "${output}.build-info.txt"
+          grep -q -- '--with-http_v2_module' "${output}.build-info.txt"
+          grep -q -- '--with-stream' "${output}.build-info.txt"
+          grep -q -- '--with-stream_ssl_preread_module' "${output}.build-info.txt"
+
+      - name: Upload compiled binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: nginx-1.30.4-${{ matrix.arch }}-linux-static
+          path: output/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish compiled binaries
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download compiled binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Inspect release files
+        run: |
+          ls -lah release
+          cat release/*.sha256
+
+      - name: Publish Nginx core release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: nginx-core-1.30.4-r1
+        run: |
+          set -e
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" release/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Fn-Nginx Nginx core 1.30.4 r1" \
+              --notes "Nginx 1.30.4 compiled from the official nginx.org source for Linux x86_64 and AArch64. Both binaries use identical modules and static musl/OpenSSL/PCRE/zlib linking parameters."
+          fi
