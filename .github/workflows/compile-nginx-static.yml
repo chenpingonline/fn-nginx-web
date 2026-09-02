@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/compile-nginx-static.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -23,6 +24,7 @@ jobs:
             output_arch: aarch64
     env:
       NGINX_VERSION: 1.30.4
+      SOURCE_SHA: 4261dc90e9e47c1c4041276e9aaa3d48ebe2e664f728e14fa95ae6c67d57a08b
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,6 +41,7 @@ jobs:
           # syntax=docker/dockerfile:1
           FROM alpine:3.21 AS build
           ARG NGINX_VERSION
+          ARG SOURCE_SHA
           ARG OUTPUT_ARCH
           ENV SOURCE_DATE_EPOCH=1786814640
           RUN apk add --no-cache \
@@ -47,6 +50,7 @@ jobs:
           WORKDIR /build
           RUN curl -fL --retry 5 --retry-delay 2 \
                 -o nginx.tar.gz "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
+              && echo "${SOURCE_SHA}  nginx.tar.gz" | sha256sum -c - \
               && sha256sum nginx.tar.gz > nginx-source.sha256 \
               && tar -xzf nginx.tar.gz
           WORKDIR /build/nginx-${NGINX_VERSION}
@@ -64,7 +68,7 @@ jobs:
                 --http-uwsgi-temp-path=uwsgi_temp \
                 --http-scgi-temp-path=scgi_temp \
                 --user=nobody \
-                --group=nobody \
+                --group=nogroup \
                 --with-cc-opt='-Os -fomit-frame-pointer -pipe' \
                 --with-ld-opt='-static -Wl,--as-needed' \
                 --with-threads \
@@ -103,6 +107,7 @@ jobs:
           docker buildx build \
             --platform "${{ matrix.platform }}" \
             --build-arg "NGINX_VERSION=${NGINX_VERSION}" \
+            --build-arg "SOURCE_SHA=${SOURCE_SHA}" \
             --build-arg "OUTPUT_ARCH=${{ matrix.output_arch }}" \
             --provenance=false \
             --no-cache \
@@ -117,6 +122,7 @@ jobs:
           file "$binary"
           grep -q 'statically linked' "${binary}.file.txt"
           grep -q "nginx/${NGINX_VERSION}" "${binary}.build-info.txt"
+          grep -q -- '--group=nogroup' "${binary}.build-info.txt"
           grep -q -- '--with-http_ssl_module' "${binary}.build-info.txt"
           grep -q -- '--with-http_v2_module' "${binary}.build-info.txt"
           grep -q -- '--with-stream' "${binary}.build-info.txt"
@@ -151,7 +157,7 @@ jobs:
       - name: Publish Nginx core release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: nginx-core-1.30.4-r1
+          TAG: nginx-core-1.30.4-r2
         run: |
           set -e
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
@@ -159,6 +165,6 @@ jobs:
           else
             gh release create "$TAG" release/* \
               --repo "$GITHUB_REPOSITORY" \
-              --title "Fn-Nginx Nginx core 1.30.4 r1" \
-              --notes "Nginx 1.30.4 compiled from the official nginx.org source for Linux x86_64 and AArch64. Both binaries use identical modules and static musl/OpenSSL/PCRE/zlib linking parameters."
+              --title "Fn-Nginx Nginx core 1.30.4 r2" \
+              --notes "Nginx 1.30.4 compiled from the official nginx.org source for Linux x86_64 and AArch64. Both binaries use identical modules, static musl/OpenSSL/PCRE/zlib linking, and Debian-compatible default group nogroup."
           fi
