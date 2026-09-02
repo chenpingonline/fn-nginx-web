@@ -1,6 +1,6 @@
-# FnProxy
+# Fn-Nginx
 
-FnProxy 是一个面向飞牛 fnOS 的原生 Nginx 反向代理可视化管理应用。
+Fn-Nginx 是一个面向飞牛 fnOS 的原生 Nginx 反向代理可视化管理应用。
 
 它自带独立的 Nginx Open Source 1.30.4，不读取、不修改、也不会重启飞牛系统 Nginx；不依赖 Docker，管理后台通过 fnOS 统一网关和 Unix Socket 提供。
 
@@ -27,7 +27,7 @@ fnOS 统一网关 /app/fnproxy/
    ↓
 TRIM_APPDEST/app.sock
    ↓
-FnProxy Go 管理服务
+Fn-Nginx Go 管理服务
    ↓
 配置生成、nginx -t、平滑重载与回滚
    ↓
@@ -40,7 +40,9 @@ NAS 服务 / Docker 服务 / 局域网设备
 
 ## 与系统 Nginx 的隔离
 
-FnProxy 只使用自己的 `TRIM_APPDEST`、`TRIM_PKGETC`、`TRIM_PKGVAR` 和 `TRIM_PKGTMP` 目录，不会访问 `/etc/nginx`、`/usr/trim/nginx`，也不会执行 `systemctl restart nginx`。
+Fn-Nginx 只使用自己的 `TRIM_APPDEST`、`TRIM_PKGETC`、`TRIM_PKGVAR` 和 `TRIM_PKGTMP` 目录，不会访问 `/etc/nginx`、`/usr/trim/nginx`，也不会执行 `systemctl restart nginx`。
+
+> 为兼容已经安装的测试版，内部应用 ID、统一网关路径和运行用户仍保留为 `fnproxy`；这不会影响桌面展示名称和 FPK 文件名。
 
 ## 构建
 
@@ -57,8 +59,8 @@ make build-all
 输出：
 
 ```text
-dist/fnproxy-0.1.0-x86.fpk
-dist/fnproxy-0.1.0-arm64.fpk
+dist/Fn-Nginx-0.1.0-x86.fpk
+dist/Fn-Nginx-0.1.0-arm64.fpk
 ```
 
 构建时会下载固定版本的 Nginx 二进制并校验摘要，第三方二进制不直接提交到源码仓库。固定摘要与来源说明位于 `third_party/nginx/`。也可以通过 `NGINX_BINARY=/path/to/nginx` 提供本地二进制，但仍必须通过固定摘要校验。
@@ -82,4 +84,4 @@ make release
 
 ## 许可证
 
-FnProxy 源码使用 MIT License。Nginx Open Source 和 ARM64 静态构建所含组件的许可证见 `NGINX_LICENSE`、`NOTICE` 与 `THIRD_PARTY_LICENSES.md`。
+Fn-Nginx 源码使用 MIT License。Nginx Open Source 和 ARM64 静态构建所含组件的许可证见 `NGINX_LICENSE`、`NOTICE` 与 `THIRD_PARTY_LICENSES.md`。

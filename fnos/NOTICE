@@ -1,4 +1,4 @@
-FnProxy bundles an independently running NGINX Open Source binary.
+Fn-Nginx bundles an independently running NGINX Open Source binary.
 
 NGINX version: 1.30.4 (stable)
 
@@ -14,4 +14,4 @@ ARM64 package provenance:
 - Bundled NGINX SHA-256: 3c7d9e6776b1bbeb1e125a6e25a98578de7d0dff2b0939c5b3b9d590efb9ee8e
 - Exact source inputs are recorded in third_party/nginx/arm64/SOURCES.txt.
 
-FnProxy does not modify, load, stop, or reload the fnOS system NGINX instance.
+Fn-Nginx does not modify, load, stop, or reload the fnOS system NGINX instance.

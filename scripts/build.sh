@@ -10,7 +10,7 @@ case "$ARCH" in
   arm|arm64|aarch64) ARCH="arm64"; GOARCH="arm64"; PLATFORM="arm"; FILE_PATTERN='ARM aarch64|ARM64|aarch64'; OUTPUT_ARCH="arm64" ;;
   *) echo "不支持的架构：$ARCH（应为 x86 或 arm64）" >&2; exit 1 ;;
 esac
-WORK="$ROOT/.build/$ARCH"; STAGE="$WORK/fpk"; APP_STAGE="$WORK/app"; FPK_NAME="fnproxy-${VERSION}-${OUTPUT_ARCH}.fpk"
+WORK="$ROOT/.build/$ARCH"; STAGE="$WORK/fpk"; APP_STAGE="$WORK/app"; FPK_NAME="Fn-Nginx-${VERSION}-${OUTPUT_ARCH}.fpk"
 for cmd in go tar file python3; do command -v "$cmd" >/dev/null 2>&1 || { echo "缺少 $cmd" >&2; exit 1; }; done
 rm -rf "$WORK"; mkdir -p "$DIST" "$STAGE" "$APP_STAGE/bin"
 

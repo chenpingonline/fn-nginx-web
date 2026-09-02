@@ -1,7 +1,7 @@
 {
   ".url": {
     "fnproxy.main": {
-      "title": "FnProxy",
+      "title": "Fn-Nginx",
       "icon": "images/icon_{0}.png",
       "type": "iframe",
       "protocol": "",

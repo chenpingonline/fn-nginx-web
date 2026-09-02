@@ -16,7 +16,7 @@ mkdir -p "$WORK/app"; tar -xzf "$WORK/app.tgz" -C "$WORK/app"
 for f in bin/fnproxy-server bin/nginx etc/mime.types ui/config ui/images/icon_64.png ui/images/icon_256.png; do [[ -e "$WORK/app/$f" ]] || { echo "app.tgz 缺少 $f" >&2; exit 1; }; done
 file "$WORK/app/bin/fnproxy-server" | grep -Eq "$FILE_PATTERN" || { echo '管理程序架构错误' >&2; exit 1; }
 file "$WORK/app/bin/nginx" | grep -Eq "$FILE_PATTERN" || { echo 'Nginx 架构错误' >&2; exit 1; }
-grep -aFq 'FnProxy 0.1.0' "$WORK/app/bin/fnproxy-server" || { echo '管理程序版本字符串不正确' >&2; exit 1; }
+grep -aFq 'Fn-Nginx 0.1.0' "$WORK/app/bin/fnproxy-server" || { echo '管理程序版本字符串不正确' >&2; exit 1; }
 grep -aFq 'nginx version: nginx/1.30.4' "$WORK/app/bin/nginx" || { echo 'Nginx 版本不正确' >&2; exit 1; }
 if command -v sha256sum >/dev/null 2>&1; then ACTUAL_SHA="$(sha256sum "$WORK/app/bin/nginx" | awk '{print $1}')"; else ACTUAL_SHA="$(shasum -a 256 "$WORK/app/bin/nginx" | awk '{print $1}')"; fi
 [[ "$ACTUAL_SHA" == "$NGINX_SHA" ]] || { echo 'Nginx 摘要不匹配' >&2; exit 1; }

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	AppName       = "FnProxy"
+	AppName       = "Fn-Nginx"
 	AppVersion    = "0.1.0"
 	NginxVersion  = "1.30.4"
 	SchemaVersion = 1

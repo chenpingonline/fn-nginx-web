@@ -1,6 +1,6 @@
 # Third-party software notices
 
-FnProxy packages an independently running NGINX Open Source 1.30.4 executable.
+Fn-Nginx packages an independently running NGINX Open Source 1.30.4 executable.
 The x86_64 build is dynamically linked against libraries supplied by the target
 system. The ARM64 build is a static executable and therefore contains the
 additional components listed below.
